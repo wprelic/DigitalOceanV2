@@ -11,15 +11,18 @@
 
 namespace DigitalOceanV2\Adapter;
 
+use DigitalOceanV2\Exception\HttpException;
+
 /**
  * @author Antoine Corcy <contact@sbin.dk>
+ * @author Graham Campbell <graham@alt-three.com>
  */
 interface AdapterInterface
 {
     /**
      * @param string $url
      *
-     * @throws \RuntimeException|ExceptionInterface
+     * @throws HttpException
      *
      * @return string
      */
@@ -27,36 +30,33 @@ interface AdapterInterface
 
     /**
      * @param string $url
-     * @param array  $headers (optional)
      *
-     * @throws \RuntimeException|ExceptionInterface
+     * @throws HttpException
      */
-    public function delete($url, array $headers = array());
+    public function delete($url);
 
     /**
-     * @param string $url
-     * @param array  $headers (optional)
-     * @param string $content (optional)
+     * @param string       $url
+     * @param array|string $content
      *
-     * @throws \RuntimeException|ExceptionInterface
+     * @throws HttpException
      *
      * @return string
      */
-    public function put($url, array $headers = array(), $content = '');
+    public function put($url, $content = '');
 
     /**
-     * @param string $url
-     * @param array  $headers (optional)
-     * @param string $content (optional)
+     * @param string       $url
+     * @param array|string $content
      *
-     * @throws \RuntimeException|ExceptionInterface
+     * @throws HttpException
      *
      * @return string
      */
-    public function post($url, array $headers = array(), $content = '');
+    public function post($url, $content = '');
 
     /**
-     * @return null|array
+     * @return array|null
      */
     public function getLatestResponseHeaders();
 }

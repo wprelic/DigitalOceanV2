@@ -15,6 +15,7 @@ use DigitalOceanV2\Entity\RateLimit as RateLimitEntity;
 
 /**
  * @author Yassir Hannoun <yassir.hannoun@gmail.com>
+ * @author Graham Campbell <graham@alt-three.com>
  */
 class RateLimit extends AbstractApi
 {
@@ -23,8 +24,8 @@ class RateLimit extends AbstractApi
      */
     public function getRateLimit()
     {
-        $results = $this->adapter->getLatestResponseHeaders();
-
-        return null !== $results ? new RateLimitEntity($results) : null;
+        if ($results = $this->adapter->getLatestResponseHeaders()) {
+            return new RateLimitEntity($results);
+        }
     }
 }

@@ -3,6 +3,7 @@
 namespace spec\DigitalOceanV2\Api;
 
 use DigitalOceanV2\Adapter\AdapterInterface;
+use DigitalOceanV2\Exception\HttpException;
 
 class KeySpec extends \PhpSpec\ObjectBehavior
 {
@@ -18,7 +19,7 @@ class KeySpec extends \PhpSpec\ObjectBehavior
 
     function it_returns_an_empty_array($adapter)
     {
-        $adapter->get('https://api.digitalocean.com/v2/account/keys?per_page='.PHP_INT_MAX)->willReturn('{"ssh_keys": []}');
+        $adapter->get('https://api.digitalocean.com/v2/account/keys?per_page=200')->willReturn('{"ssh_keys": []}');
 
         $keys = $this->getAll();
         $keys->shouldBeArray();
@@ -28,7 +29,7 @@ class KeySpec extends \PhpSpec\ObjectBehavior
     function it_returns_an_array_of_key_entity($adapter)
     {
         $total = 3;
-        $adapter->get('https://api.digitalocean.com/v2/account/keys?per_page='.PHP_INT_MAX)
+        $adapter->get('https://api.digitalocean.com/v2/account/keys?per_page=200')
             ->willReturn(sprintf('{"ssh_keys": [{},{},{}], "meta": {"total": %d}}', $total));
 
         $keys = $this->getAll();
@@ -85,8 +86,7 @@ class KeySpec extends \PhpSpec\ObjectBehavior
         $adapter
             ->post(
                 'https://api.digitalocean.com/v2/account/keys',
-                array('Content-Type: application/json'),
-                '{"name":"foo","public_key":"ssh-rsa foobarbaz..."}'
+                ['name' => 'foo', 'public_key' => 'ssh-rsa foobarbaz...']
             )
             ->willReturn('
                 {
@@ -105,11 +105,7 @@ class KeySpec extends \PhpSpec\ObjectBehavior
     function it_returns_the_updated_key($adapter)
     {
         $adapter
-            ->put(
-                'https://api.digitalocean.com/v2/account/keys/456',
-                array('Content-Type: application/json'),
-                '{"name":"bar"}'
-            )
+            ->put('https://api.digitalocean.com/v2/account/keys/456', ['name' => 'bar'])
             ->willReturn('
                 {
                     "ssh_key": {
@@ -124,40 +120,30 @@ class KeySpec extends \PhpSpec\ObjectBehavior
         $this->update(456, 'bar')->shouldReturnAnInstanceOf('DigitalOceanV2\Entity\Key');
     }
 
-    function it_throws_a_runtime_exception_when_trying_to_update_an_inexisting_key($adapter)
+    function it_throws_an_http_exception_when_trying_to_update_an_inexisting_key($adapter)
     {
         $adapter
-            ->put(
-                'https://api.digitalocean.com/v2/account/keys/0',
-                array('Content-Type: application/json'),
-                '{"name":"baz"}'
-            )
-            ->willThrow(new \RuntimeException('Request not processed.'));
+            ->put('https://api.digitalocean.com/v2/account/keys/0', ['name' => 'baz'])
+            ->willThrow(new HttpException('Request not processed.'));
 
-        $this->shouldThrow(new \RuntimeException('Request not processed.'))->during('update', array(0, 'baz'));
+        $this->shouldThrow(new HttpException('Request not processed.'))->during('update', [0, 'baz']);
     }
 
     function it_deletes_the_key_and_returns_nothing($adapter)
     {
         $adapter
-            ->delete(
-                'https://api.digitalocean.com/v2/account/keys/678',
-                array('Content-Type: application/x-www-form-urlencoded')
-            )
+            ->delete('https://api.digitalocean.com/v2/account/keys/678')
             ->shouldBeCalled();
 
         $this->delete(678);
     }
 
-    function it_throws_a_runtime_exception_when_trying_to_delete_an_inexisting_key($adapter)
+    function it_throws_an_http_exception_when_trying_to_delete_an_inexisting_key($adapter)
     {
         $adapter
-            ->delete(
-                'https://api.digitalocean.com/v2/account/keys/0',
-                array('Content-Type: application/x-www-form-urlencoded')
-            )
-            ->willThrow(new \RuntimeException('Request not processed.'));
+            ->delete('https://api.digitalocean.com/v2/account/keys/0')
+            ->willThrow(new HttpException('Request not processed.'));
 
-        $this->shouldThrow(new \RuntimeException('Request not processed.'))->during('delete', array(0));
+        $this->shouldThrow(new HttpException('Request not processed.'))->during('delete', [0]);
     }
 }

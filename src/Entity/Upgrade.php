@@ -13,8 +13,9 @@ namespace DigitalOceanV2\Entity;
 
 /**
  * @author Antoine Corcy <contact@sbin.dk>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class Upgrade extends AbstractEntity
+final class Upgrade extends AbstractEntity
 {
     /**
      * @var int
@@ -36,6 +37,6 @@ class Upgrade extends AbstractEntity
      */
     public function setDateOfMigration($dateOfMigration)
     {
-        $this->dateOfMigration = $this->convertDateTime($dateOfMigration);
+        $this->dateOfMigration = static::convertDateTime($dateOfMigration);
     }
 }

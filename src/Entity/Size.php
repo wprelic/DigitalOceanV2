@@ -13,8 +13,9 @@ namespace DigitalOceanV2\Entity;
 
 /**
  * @author Yassir Hannoun <yassir.hannoun@gmail.com>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class Size extends AbstractEntity
+final class Size extends AbstractEntity
 {
     /**
      * @var string
@@ -22,7 +23,7 @@ class Size extends AbstractEntity
     public $slug;
 
     /**
-     * @var boolean
+     * @var bool
      */
     public $available;
 
@@ -59,5 +60,5 @@ class Size extends AbstractEntity
     /**
      * @var string[]
      */
-    public $regions;
+    public $regions = [];
 }

@@ -13,81 +13,53 @@ namespace DigitalOceanV2\Entity;
 
 /**
  * @author Antoine Corcy <contact@sbin.dk>
+ * @author Graham Campbell <graham@alt-three.com>
  */
 abstract class AbstractEntity
 {
     /**
-     * @var array
+     * @param \stdClass|array|null $parameters
      */
-    protected $unknownProperties = [];
-
-    /**
-     * @param \stdClass|array $parameters
-     */
-    public function __construct($parameters)
+    public function __construct($parameters = null)
     {
+        if (!$parameters) {
+            return;
+        }
+
+        if ($parameters instanceof \stdClass) {
+            $parameters = get_object_vars($parameters);
+        }
+
         $this->build($parameters);
     }
 
     /**
-     * @param string $property
-     *
-     * @throws \InvalidArgumentException
-     *
-     * @return mixed
+     * @param array $parameters
      */
-    public function __get($property)
+    public function build(array $parameters)
     {
-        if (!property_exists($this, $property)) {
-            if (array_key_exists($property, $this->unknownProperties)) {
-                 return $this->unknownProperties[$property];
-            }
-
-            throw new \InvalidArgumentException(sprintf(
-                'Property "%s::%s" does not exist.', get_class($this), $property
-            ));
-        }
-    }
-
-    /**
-     * @param string $property
-     * @param mixed  $value
-     */
-    public function __set($property, $value)
-    {
-        if (!property_exists($this, $property)) {
-            $this->unknownProperties[$property] = $value;
-        }
-    }
-
-    /**
-     * @return array
-     */
-    public function getUnknownProperties()
-    {
-        return $this->unknownProperties;
-    }
-
-    /**
-     * @param \stdClass|array $parameters
-     */
-    public function build($parameters)
-    {
+<<<<<<< HEAD
         foreach ((array) $parameters as $property => $value) {
             $property = \DigitalOceanV2\convert_to_camel_case($property);
+=======
+        foreach ($parameters as $property => $value) {
+            $property = static::convertToCamelCase($property);
+>>>>>>> toin0u/master
 
-            $this->$property = $value;
+            if (property_exists($this, $property)) {
+                $this->$property = $value;
+            }
         }
     }
 
     /**
-     * @param string $date DateTime string
+     * @param string|null $date DateTime string
      *
-     * @return null|string DateTime in ISO8601 format
+     * @return string|null DateTime in ISO8601 format
      */
-    protected function convertDateTime($date)
+    protected static function convertDateTime($date)
     {
-        if (empty($date)) {
+        if (!$date) {
             return;
         }
 
@@ -95,5 +67,19 @@ abstract class AbstractEntity
         $date->setTimezone(new \DateTimeZone(date_default_timezone_get()));
 
         return $date->format(\DateTime::ISO8601);
+    }
+
+    /**
+     * @param string $str Snake case string
+     *
+     * @return string Camel case string
+     */
+    protected static function convertToCamelCase($str)
+    {
+        $callback = function ($match) {
+            return strtoupper($match[2]);
+        };
+
+        return lcfirst(preg_replace_callback('/(^|_)([a-z])/', $callback, $str));
     }
 }

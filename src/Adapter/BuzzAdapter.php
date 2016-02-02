@@ -13,14 +13,16 @@ namespace DigitalOceanV2\Adapter;
 
 use Buzz\Browser;
 use Buzz\Client\Curl;
+use Buzz\Client\FileGetContents;
 use Buzz\Listener\ListenerInterface;
 use Buzz\Message\Response;
-use DigitalOceanV2\Exception\ExceptionInterface;
+use DigitalOceanV2\Exception\HttpException;
 
 /**
  * @author Antoine Corcy <contact@sbin.dk>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class BuzzAdapter extends AbstractAdapter implements AdapterInterface
+class BuzzAdapter implements AdapterInterface
 {
     /**
      * @var Browser
@@ -28,21 +30,14 @@ class BuzzAdapter extends AbstractAdapter implements AdapterInterface
     protected $browser;
 
     /**
-     * @var ExceptionInterface
+     * @param string                 $token
+     * @param Browser|null           $browser
+     * @param ListenerInterface|null $listener
      */
-    protected $exception;
-
-    /**
-     * @param string             $accessToken
-     * @param Browser            $browser     (optional)
-     * @param ListenerInterface  $listener    (optional)
-     * @param ExceptionInterface $exception   (optional)
-     */
-    public function __construct($accessToken, Browser $browser = null, ListenerInterface $listener = null, ExceptionInterface $exception = null)
+    public function __construct($token, Browser $browser = null, ListenerInterface $listener = null)
     {
-        $this->browser = $browser ?: new Browser(new Curl());
-        $this->browser->addListener($listener ?: new BuzzOAuthListener($accessToken));
-        $this->exception = $exception;
+        $this->browser = $browser ?: new Browser(function_exists('curl_exec') ? new Curl() : new FileGetContents());
+        $this->browser->addListener($listener ?: new BuzzOAuthListener($token));
     }
 
     /**
@@ -52,9 +47,7 @@ class BuzzAdapter extends AbstractAdapter implements AdapterInterface
     {
         $response = $this->browser->get($url);
 
-        if (!$response->isSuccessful()) {
-            throw $this->handleResponse($response);
-        }
+        $this->handleResponse($response);
 
         return $response->getContent();
     }
@@ -62,25 +55,28 @@ class BuzzAdapter extends AbstractAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function delete($url, array $headers = array())
+    public function delete($url)
     {
-        $response = $this->browser->delete($url, $headers);
+        $response = $this->browser->delete($url);
 
-        if (!$response->isSuccessful()) {
-            throw $this->handleResponse($response);
-        }
+        $this->handleResponse($response);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function put($url, array $headers = array(), $content = '')
+    public function put($url, $content = '')
     {
+        $headers = [];
+
+        if (is_array($content)) {
+            $content = json_encode($content);
+            $headers[] = 'Content-Type: application/json';
+        }
+
         $response = $this->browser->put($url, $headers, $content);
 
-        if (!$response->isSuccessful()) {
-            throw $this->handleResponse($response);
-        }
+        $this->handleResponse($response);
 
         return $response->getContent();
     }
@@ -88,13 +84,18 @@ class BuzzAdapter extends AbstractAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function post($url, array $headers = array(), $content = '')
+    public function post($url, $content = '')
     {
+        $headers = [];
+
+        if (is_array($content)) {
+            $content = json_encode($content);
+            $headers[] = 'Content-Type: application/json';
+        }
+
         $response = $this->browser->post($url, $headers, $content);
 
-        if (!$response->isSuccessful()) {
-            throw $this->handleResponse($response);
-        }
+        $this->handleResponse($response);
 
         return $response->getContent();
     }
@@ -108,28 +109,39 @@ class BuzzAdapter extends AbstractAdapter implements AdapterInterface
             return;
         }
 
-        return array(
-            'reset'     => (int) $response->getHeader('RateLimit-Reset'),
+        return [
+            'reset' => (int) $response->getHeader('RateLimit-Reset'),
             'remaining' => (int) $response->getHeader('RateLimit-Remaining'),
-            'limit'     => (int) $response->getHeader('RateLimit-Limit'),
-        );
+            'limit' => (int) $response->getHeader('RateLimit-Limit'),
+        ];
     }
 
     /**
      * @param Response $response
      *
-     * @return \Exception
+     * @throws HttpException
      */
     protected function handleResponse(Response $response)
     {
-        if ($this->exception) {
-            return $this->exception->create($response->getContent(), $response->getStatusCode());
+        if ($response->isSuccessful()) {
+            return;
         }
 
-        $content = json_decode($response->getContent());
+        $this->handleError($response);
+    }
 
-        return new \RuntimeException(
-            sprintf('[%d] %s (%s)', $response->getStatusCode(), $content->message, $content->id)
-        );
+    /**
+     * @param Response $response
+     *
+     * @throws HttpException
+     */
+    protected function handleError(Response $response)
+    {
+        $body = (string) $response->getContent();
+        $code = (int) $response->getStatusCode();
+
+        $content = json_decode($body);
+
+        throw new HttpException(isset($content->message) ? $content->message : 'Request not processed.', $code);
     }
 }

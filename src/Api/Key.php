@@ -12,9 +12,11 @@
 namespace DigitalOceanV2\Api;
 
 use DigitalOceanV2\Entity\Key as KeyEntity;
+use DigitalOceanV2\Exception\HttpException;
 
 /**
  * @author Antoine Corcy <contact@sbin.dk>
+ * @author Graham Campbell <graham@alt-three.com>
  */
 class Key extends AbstractApi
 {
@@ -23,8 +25,10 @@ class Key extends AbstractApi
      */
     public function getAll()
     {
-        $keys = $this->adapter->get(sprintf('%s/account/keys?per_page=%d', self::ENDPOINT, PHP_INT_MAX));
+        $keys = $this->adapter->get(sprintf('%s/account/keys?per_page=%d', $this->endpoint, 200));
+
         $keys = json_decode($keys);
+
         $this->extractMeta($keys);
 
         return array_map(function ($key) {
@@ -39,7 +43,8 @@ class Key extends AbstractApi
      */
     public function getById($id)
     {
-        $key = $this->adapter->get(sprintf('%s/account/keys/%d', self::ENDPOINT, $id));
+        $key = $this->adapter->get(sprintf('%s/account/keys/%d', $this->endpoint, $id));
+
         $key = json_decode($key);
 
         return new KeyEntity($key->ssh_key);
@@ -52,7 +57,8 @@ class Key extends AbstractApi
      */
     public function getByFingerprint($fingerprint)
     {
-        $key = $this->adapter->get(sprintf('%s/account/keys/%s', self::ENDPOINT, $fingerprint));
+        $key = $this->adapter->get(sprintf('%s/account/keys/%s', $this->endpoint, $fingerprint));
+
         $key = json_decode($key);
 
         return new KeyEntity($key->ssh_key);
@@ -62,16 +68,14 @@ class Key extends AbstractApi
      * @param string $name
      * @param string $publicKey
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return KeyEntity
      */
     public function create($name, $publicKey)
     {
-        $headers = array('Content-Type: application/json');
-        $content = json_encode(array('name' => $name, 'public_key' => $publicKey));
+        $key = $this->adapter->post(sprintf('%s/account/keys', $this->endpoint), ['name' => $name, 'public_key' => $publicKey]);
 
-        $key = $this->adapter->post(sprintf('%s/account/keys', self::ENDPOINT), $headers, $content);
         $key = json_decode($key);
 
         return new KeyEntity($key->ssh_key);
@@ -81,16 +85,14 @@ class Key extends AbstractApi
      * @param int    $id
      * @param string $name
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return KeyEntity
      */
     public function update($id, $name)
     {
-        $headers = array('Content-Type: application/json');
-        $content = json_encode(array('name' => $name));
+        $key = $this->adapter->put(sprintf('%s/account/keys/%d', $this->endpoint, $id), ['name' => $name]);
 
-        $key = $this->adapter->put(sprintf('%s/account/keys/%d', self::ENDPOINT, $id), $headers, $content);
         $key = json_decode($key);
 
         return new KeyEntity($key->ssh_key);
@@ -99,11 +101,10 @@ class Key extends AbstractApi
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      */
     public function delete($id)
     {
-        $headers = array('Content-Type: application/x-www-form-urlencoded');
-        $this->adapter->delete(sprintf('%s/account/keys/%d', self::ENDPOINT, $id), $headers);
+        $this->adapter->delete(sprintf('%s/account/keys/%d', $this->endpoint, $id));
     }
 }

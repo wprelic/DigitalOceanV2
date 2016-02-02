@@ -13,13 +13,19 @@ namespace DigitalOceanV2\Entity;
 
 /**
  * @author Antoine Corcy <contact@sbin.dk>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class Account extends AbstractEntity
+final class Account extends AbstractEntity
 {
     /**
      * @var int
      */
     public $dropletLimit;
+
+    /**
+     * @var int
+     */
+    public $floatingIpLimit;
 
     /**
      * @var string
@@ -35,4 +41,14 @@ class Account extends AbstractEntity
      * @var bool
      */
     public $emailVerified;
+
+    /**
+     * @var string
+     */
+    public $status;
+
+    /**
+     * @var string
+     */
+    public $statusMessage;
 }

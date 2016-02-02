@@ -13,8 +13,9 @@ namespace DigitalOceanV2\Entity;
 
 /**
  * @author Yassir Hannoun <yassir.hannoun@gmail.com>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class Region extends AbstractEntity
+final class Region extends AbstractEntity
 {
     /**
      * @var string
@@ -34,10 +35,10 @@ class Region extends AbstractEntity
     /**
      * @var string[]
      */
-    public $sizes;
+    public $sizes = [];
 
     /**
      * @var string[]
      */
-    public $features;
+    public $features = [];
 }

@@ -3,6 +3,7 @@
 namespace spec\DigitalOceanV2\Api;
 
 use DigitalOceanV2\Adapter\AdapterInterface;
+use DigitalOceanV2\Exception\HttpException;
 
 class ActionSpec extends \PhpSpec\ObjectBehavior
 {
@@ -18,7 +19,7 @@ class ActionSpec extends \PhpSpec\ObjectBehavior
 
     function it_returns_an_empty_array($adapter)
     {
-        $adapter->get('https://api.digitalocean.com/v2/actions?per_page='.PHP_INT_MAX)->willReturn('{"actions": []}');
+        $adapter->get('https://api.digitalocean.com/v2/actions?per_page=200')->willReturn('{"actions": []}');
 
         $actions = $this->getAll();
         $actions->shouldBeArray();
@@ -29,7 +30,7 @@ class ActionSpec extends \PhpSpec\ObjectBehavior
     {
         $total = 3;
         $adapter
-            ->get('https://api.digitalocean.com/v2/actions?per_page='.PHP_INT_MAX)
+            ->get('https://api.digitalocean.com/v2/actions?per_page=200')
             ->willReturn(sprintf('
                 {
                     "actions": [
@@ -138,12 +139,12 @@ class ActionSpec extends \PhpSpec\ObjectBehavior
         $this->getMeta()->shouldBeNull();
     }
 
-    function it_throws_an_runtime_exception_if_requested_action_does_not_exist($adapter)
+    function it_throws_an_http_exception_if_requested_action_does_not_exist($adapter)
     {
         $adapter
             ->get('https://api.digitalocean.com/v2/actions/123456789123456789')
-            ->willThrow(new \RuntimeException('Request not processed.'));
+            ->willThrow(new HttpException('Request not processed.'));
 
-        $this->shouldThrow(new \RuntimeException('Request not processed.'))->duringGetById(123456789123456789);
+        $this->shouldThrow(new HttpException('Request not processed.'))->duringGetById(123456789123456789);
     }
 }

@@ -16,9 +16,11 @@ use DigitalOceanV2\Entity\Droplet as DropletEntity;
 use DigitalOceanV2\Entity\Image as ImageEntity;
 use DigitalOceanV2\Entity\Kernel as KernelEntity;
 use DigitalOceanV2\Entity\Upgrade as UpgradeEntity;
+use DigitalOceanV2\Exception\HttpException;
 
 /**
  * @author Yassir Hannoun <yassir.hannoun@gmail.com>
+ * @author Graham Campbell <graham@alt-three.com>
  */
 class Droplet extends AbstractApi
 {
@@ -27,7 +29,8 @@ class Droplet extends AbstractApi
      */
     public function getAll()
     {
-        $droplets = $this->adapter->get(sprintf('%s/droplets?per_page=%d', self::ENDPOINT, PHP_INT_MAX));
+        $droplets = $this->adapter->get(sprintf('%s/droplets?per_page=%d', $this->endpoint, 200));
+
         $droplets = json_decode($droplets);
 
         $this->extractMeta($droplets);
@@ -44,7 +47,8 @@ class Droplet extends AbstractApi
      */
     public function getNeighborsById($id)
     {
-        $droplets = $this->adapter->get(sprintf('%s/droplets/%d/neighbors', self::ENDPOINT, $id));
+        $droplets = $this->adapter->get(sprintf('%s/droplets/%d/neighbors', $this->endpoint, $id));
+
         $droplets = json_decode($droplets);
 
         return array_map(function ($droplet) {
@@ -57,7 +61,8 @@ class Droplet extends AbstractApi
      */
     public function getAllNeighbors()
     {
-        $neighbors = $this->adapter->get(sprintf('%s/reports/droplet_neighbors', self::ENDPOINT));
+        $neighbors = $this->adapter->get(sprintf('%s/reports/droplet_neighbors', $this->endpoint));
+
         $neighbors = json_decode($neighbors);
 
         return array_map(function ($neighbor) {
@@ -70,7 +75,8 @@ class Droplet extends AbstractApi
      */
     public function getUpgrades()
     {
-        $upgrades = $this->adapter->get(sprintf('%s/droplet_upgrades', self::ENDPOINT));
+        $upgrades = $this->adapter->get(sprintf('%s/droplet_upgrades', $this->endpoint));
+
         $upgrades = json_decode($upgrades);
 
         return array_map(function ($upgrade) {
@@ -81,59 +87,61 @@ class Droplet extends AbstractApi
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return DropletEntity
      */
     public function getById($id)
     {
-        $droplet = $this->adapter->get(sprintf('%s/droplets/%d', self::ENDPOINT, $id));
+        $droplet = $this->adapter->get(sprintf('%s/droplets/%d', $this->endpoint, $id));
+
         $droplet = json_decode($droplet);
 
         return new DropletEntity($droplet->droplet);
     }
 
     /**
-     * @param string     $name
-     * @param string     $region
-     * @param string     $size
-     * @param string|int $image
-     * @param bool       $backups           (optional)
-     * @param bool       $ipv6              (optional)
-     * @param bool       $privateNetworking (optional)
-     * @param int[]      $sshKeys           (optional)
-     * @param string     $userData          (optional)
+     * @param array|string $names
+     * @param string       $region
+     * @param string       $size
+     * @param string|int   $image
+     * @param bool         $backups
+     * @param bool         $ipv6
+     * @param bool         $privateNetworking
+     * @param int[]        $sshKeys
+     * @param string       $userData
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
-     * @return DropletEntity
+     * @return DropletEntity|null
      */
-    public function create($name, $region, $size, $image, $backups = false, $ipv6 = false,
-        $privateNetworking = false, array $sshKeys = array(), $userData = ""
-    ) {
-        $headers = array('Content-Type: application/json');
+    public function create($names, $region, $size, $image, $backups = false, $ipv6 = false, $privateNetworking = false, array $sshKeys = [], $userData = '')
+    {
+        $data = is_array($names) ? ['names' => $names] : ['name' => $names];
 
-        $data = array(
-            'name' => $name,
+        $data = array_merge($data, [
             'region' => $region,
             'size' => $size,
             'image' => $image,
-            'backups' => \DigitalOceanV2\bool_to_string($backups),
-            'ipv6' => \DigitalOceanV2\bool_to_string($ipv6),
-            'private_networking' => \DigitalOceanV2\bool_to_string($privateNetworking)
-        );
+            'backups' => $backups ? 'true' : 'false',
+            'ipv6' => $ipv6 ? 'true' : 'false',
+            'private_networking' => $privateNetworking ? 'true' : 'false',
+        ]);
 
         if (0 < count($sshKeys)) {
-            $data["ssh_keys"] = $sshKeys;
+            $data['ssh_keys'] = $sshKeys;
         }
 
         if (!empty($userData)) {
-            $data["user_data"] = $userData;
+            $data['user_data'] = $userData;
         }
 
-        $content = json_encode($data);
+        $droplet = $this->adapter->post(sprintf('%s/droplets', $this->endpoint), $data);
 
-        $droplet = $this->adapter->post(sprintf('%s/droplets', self::ENDPOINT), $headers, $content);
+        if (is_array($names)) {
+            return;
+        }
+
         $droplet = json_decode($droplet);
 
         return new DropletEntity($droplet->droplet);
@@ -142,24 +150,24 @@ class Droplet extends AbstractApi
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      */
     public function delete($id)
     {
-        $headers = array('Content-Type: application/x-www-form-urlencoded');
-        $this->adapter->delete(sprintf('%s/droplets/%d', self::ENDPOINT, $id), $headers);
+        $this->adapter->delete(sprintf('%s/droplets/%d', $this->endpoint, $id));
     }
 
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return KernelEntity[]
      */
     public function getAvailableKernels($id)
     {
-        $kernels = $this->adapter->get(sprintf('%s/droplets/%d/kernels', self::ENDPOINT, $id));
+        $kernels = $this->adapter->get(sprintf('%s/droplets/%d/kernels', $this->endpoint, $id));
+
         $kernels = json_decode($kernels);
 
         $this->meta = $this->extractMeta($kernels);
@@ -176,7 +184,8 @@ class Droplet extends AbstractApi
      */
     public function getSnapshots($id)
     {
-        $snapshots = $this->adapter->get(sprintf('%s/droplets/%d/snapshots?per_page=%d', self::ENDPOINT, $id, PHP_INT_MAX));
+        $snapshots = $this->adapter->get(sprintf('%s/droplets/%d/snapshots?per_page=%d', $this->endpoint, $id, 200));
+
         $snapshots = json_decode($snapshots);
 
         $this->meta = $this->extractMeta($snapshots);
@@ -195,7 +204,8 @@ class Droplet extends AbstractApi
      */
     public function getBackups($id)
     {
-        $backups = $this->adapter->get(sprintf('%s/droplets/%d/backups?per_page=%d', self::ENDPOINT, $id, PHP_INT_MAX));
+        $backups = $this->adapter->get(sprintf('%s/droplets/%d/backups?per_page=%d', $this->endpoint, $id, 200));
+
         $backups = json_decode($backups);
 
         $this->meta = $this->extractMeta($backups);
@@ -212,7 +222,8 @@ class Droplet extends AbstractApi
      */
     public function getActions($id)
     {
-        $actions = $this->adapter->get(sprintf('%s/droplets/%d/actions?per_page=%d', self::ENDPOINT, $id, PHP_INT_MAX));
+        $actions = $this->adapter->get(sprintf('%s/droplets/%d/actions?per_page=%d', $this->endpoint, $id, 200));
+
         $actions = json_decode($actions);
 
         $this->meta = $this->extractMeta($actions);
@@ -230,7 +241,8 @@ class Droplet extends AbstractApi
      */
     public function getActionById($id, $actionId)
     {
-        $action = $this->adapter->get(sprintf('%s/droplets/%d/actions/%d', self::ENDPOINT, $id, $actionId));
+        $action = $this->adapter->get(sprintf('%s/droplets/%d/actions/%d', $this->endpoint, $id, $actionId));
+
         $action = json_decode($action);
 
         return new ActionEntity($action->action);
@@ -239,203 +251,214 @@ class Droplet extends AbstractApi
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function reboot($id)
     {
-        return $this->executeAction($id, array('type' => 'reboot'));
+        return $this->executeAction($id, ['type' => 'reboot']);
     }
 
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function powerCycle($id)
     {
-        return $this->executeAction($id, array('type' => 'power_cycle'));
+        return $this->executeAction($id, ['type' => 'power_cycle']);
     }
 
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function shutdown($id)
     {
-        return $this->executeAction($id, array('type' => 'shutdown'));
+        return $this->executeAction($id, ['type' => 'shutdown']);
     }
 
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function powerOff($id)
     {
-        return $this->executeAction($id, array('type' => 'power_off'));
+        return $this->executeAction($id, ['type' => 'power_off']);
     }
 
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function powerOn($id)
     {
-        return $this->executeAction($id, array('type' => 'power_on'));
+        return $this->executeAction($id, ['type' => 'power_on']);
     }
 
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function passwordReset($id)
     {
-        return $this->executeAction($id, array('type' => 'password_reset'));
+        return $this->executeAction($id, ['type' => 'password_reset']);
     }
 
     /**
      * @param int    $id
      * @param string $size
+     * @param bool   $disk
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
-    public function resize($id, $size)
+    public function resize($id, $size, $disk = true)
     {
-        return $this->executeAction($id, array('type' => 'resize', 'size' => $size));
+        return $this->executeAction($id, ['type' => 'resize', 'size' => $size, 'disk' => $disk ? 'true' : 'false']);
     }
 
     /**
      * @param int $id
      * @param int $image
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function restore($id, $image)
     {
-        return $this->executeAction($id, array('type' => 'restore', 'image' => $image));
+        return $this->executeAction($id, ['type' => 'restore', 'image' => $image]);
     }
 
     /**
      * @param int        $id
      * @param int|string $image
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function rebuild($id, $image)
     {
-        return $this->executeAction($id, array('type' => 'rebuild', 'image' => $image));
+        return $this->executeAction($id, ['type' => 'rebuild', 'image' => $image]);
     }
 
     /**
      * @param int    $id
      * @param string $name
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function rename($id, $name)
     {
-        return $this->executeAction($id, array('type' => 'rename', 'name' => $name));
+        return $this->executeAction($id, ['type' => 'rename', 'name' => $name]);
     }
 
     /**
      * @param int $id
      * @param int $kernel
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function changeKernel($id, $kernel)
     {
-        return $this->executeAction($id, array('type' => 'change_kernel', 'kernel' => $kernel));
+        return $this->executeAction($id, ['type' => 'change_kernel', 'kernel' => $kernel]);
     }
 
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function enableIpv6($id)
     {
-        return $this->executeAction($id, array('type' => 'enable_ipv6'));
+        return $this->executeAction($id, ['type' => 'enable_ipv6']);
     }
 
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
+     *
+     * @return ActionEntity
+     */
+    public function enableBackups($id)
+    {
+        return $this->executeAction($id, ['type' => 'enable_backups']);
+    }
+
+    /**
+     * @param int $id
+     *
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function disableBackups($id)
     {
-        return $this->executeAction($id, array('type' => 'disable_backups'));
+        return $this->executeAction($id, ['type' => 'disable_backups']);
     }
 
     /**
      * @param int $id
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function enablePrivateNetworking($id)
     {
-        return $this->executeAction($id, array('type' => 'enable_private_networking'));
+        return $this->executeAction($id, ['type' => 'enable_private_networking']);
     }
 
     /**
      * @param int    $id
      * @param string $name
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     public function snapshot($id, $name)
     {
-        return $this->executeAction($id, array('type' => 'snapshot', 'name' => $name));
+        return $this->executeAction($id, ['type' => 'snapshot', 'name' => $name]);
     }
 
     /**
      * @param int   $id
      * @param array $options
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return ActionEntity
      */
     private function executeAction($id, array $options)
     {
-        $headers = array('Content-Type: application/json');
-        $content = json_encode($options);
+        $action = $this->adapter->post(sprintf('%s/droplets/%d/actions', $this->endpoint, $id), $options);
 
-        $action = $this->adapter->post(sprintf('%s/droplets/%d/actions', self::ENDPOINT, $id), $headers, $content);
         $action = json_decode($action);
 
         return new ActionEntity($action->action);

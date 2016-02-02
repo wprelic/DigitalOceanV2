@@ -5,6 +5,7 @@ namespace spec\DigitalOceanV2\Adapter;
 use Buzz\Browser;
 use Buzz\Listener\ListenerInterface;
 use Buzz\Message\Response;
+use DigitalOceanV2\Exception\HttpException;
 
 class BuzzAdapterSpec extends \PhpSpec\ObjectBehavior
 {
@@ -30,77 +31,97 @@ class BuzzAdapterSpec extends \PhpSpec\ObjectBehavior
         $this->get('http://sbin.dk')->shouldBe('{"foo":"bar"}');
     }
 
-    function it_throws_an_runtime_exception($browser, Response $response)
+    function it_throws_an_http_exception($browser, Response $response)
     {
         $browser->get('http://sbin.dk')->willReturn($response);
 
         $response->isSuccessful()->willReturn(false);
         $response->getStatusCode()->willReturn(404);
-        $response->getContent()->willReturn('{"id":"error id", "message":"error message"}');
+        $response->getContent()->willReturn('{"id":"error_id", "message":"Error message."}');
 
-        $this->shouldThrow(new \RuntimeException('[404] error message (error id)'))->duringGet('http://sbin.dk');
+        $this->shouldThrow(new HttpException('Error message.', 404))->duringGet('http://sbin.dk');
     }
 
     function it_can_delete($browser, Response $response)
     {
-        $browser->delete('http://sbin.dk/123', array('foo' => 'bar'))->willReturn($response);
+        $browser->delete('http://sbin.dk/123')->willReturn($response);
 
         $response->isSuccessful()->willReturn(true);
 
-        $this->delete('http://sbin.dk/123', array('foo' => 'bar'));
+        $this->delete('http://sbin.dk/123');
     }
 
-    function it_throws_an_runtime_exception_if_cannot_delete($browser, Response $response)
+    function it_throws_an_http_exception_if_cannot_delete($browser, Response $response)
     {
-        $browser->delete('http://sbin.dk/123', array())->willReturn($response);
+        $browser->delete('http://sbin.dk/123')->willReturn($response);
 
         $response->isSuccessful()->willReturn(false);
         $response->getStatusCode()->willReturn(500);
-        $response->getContent()->willReturn('{"id":"error id", "message":"error message"}');
+        $response->getContent()->willReturn('{"id":"error_id", "message":"Error message."}');
 
-        $this->shouldThrow(new \RuntimeException('[500] error message (error id)'))->duringDelete('http://sbin.dk/123');
+        $this->shouldThrow(new HttpException('Error message.', 500))->duringDelete('http://sbin.dk/123');
     }
 
-    function it_can_put($browser, Response $response)
+    function it_can_put_basic($browser, Response $response)
     {
-        $browser->put('http://sbin.dk/456', array('foo' => 'bar'), '{"foo":"bar"}')->willReturn($response);
+        $browser->put('http://sbin.dk/456', [], '')->willReturn($response);
 
         $response->isSuccessful()->willReturn(true);
-        $response->getContent()->willReturn('{"foo":"bar"}');
+        $response->getContent()->willReturn('foo');
 
-        $this->put('http://sbin.dk/456', array('foo' => 'bar'), '{"foo":"bar"}')->shouldBe('{"foo":"bar"}');
+        $this->put('http://sbin.dk/456')->shouldBe('foo');
     }
 
-    function it_throws_an_runtime_exception_if_cannot_update($browser, Response $response)
+    function it_can_put_array($browser, Response $response)
     {
-        $browser->put('http://sbin.dk', array(), '{"foo":"bar"}')->willReturn($response);
-
-        $response->isSuccessful()->willReturn(false);
-        $response->getStatusCode()->willReturn(500);
-        $response->getContent()->willReturn('{"id":"error id", "message":"error message"}');
-
-        $this->shouldThrow(new \RuntimeException('[500] error message (error id)'))->duringPut('http://sbin.dk', array(), '{"foo":"bar"}');
-    }
-
-    function it_can_post($browser, Response $response)
-    {
-        $browser->post('http://sbin.dk', array('foo' => 'bar'), '{"foo":"bar"}')->willReturn($response);
+        $browser->put('http://sbin.dk/456', ['Content-Type: application/json'], '{"foo":"bar"}')->willReturn($response);
 
         $response->isSuccessful()->willReturn(true);
         $response->getContent()->willReturn('{"foo":"bar"}');
 
-        $this->post('http://sbin.dk', array('foo' => 'bar'), '{"foo":"bar"}')->shouldBe('{"foo":"bar"}');
+        $this->put('http://sbin.dk/456', ['foo' => 'bar'])->shouldBe('{"foo":"bar"}');
     }
 
-    function it_throws_an_runtime_exception_if_cannot_create($browser, Response $response)
+    function it_throws_an_http_exception_if_cannot_put($browser, Response $response)
     {
-        $browser->post('http://sbin.dk', array(), '{"foo":"bar"}')->willReturn($response);
+        $browser->put('http://sbin.dk', ['Content-Type: application/json'], '{"foo":"bar"}')->willReturn($response);
 
         $response->isSuccessful()->willReturn(false);
         $response->getStatusCode()->willReturn(500);
-        $response->getContent()->willReturn('{"id":"error id", "message":"error message"}');
+        $response->getContent()->willReturn('{"id":"error_id", "message":"Error message."}');
 
-        $this->shouldThrow(new \RuntimeException('[500] error message (error id)'))->duringPost('http://sbin.dk', array(), '{"foo":"bar"}');
+        $this->shouldThrow(new HttpException('Error message.', 500))->duringPut('http://sbin.dk', ['foo' => 'bar']);
+    }
+
+    function it_can_post_basic($browser, Response $response)
+    {
+        $browser->post('http://sbin.dk', [], '')->willReturn($response);
+
+        $response->isSuccessful()->willReturn(true);
+        $response->getContent()->willReturn('foo');
+
+        $this->post('http://sbin.dk')->shouldBe('foo');
+    }
+
+    function it_can_post_array($browser, Response $response)
+    {
+        $browser->post('http://sbin.dk', ['Content-Type: application/json'], '{"foo":"bar"}')->willReturn($response);
+
+        $response->isSuccessful()->willReturn(true);
+        $response->getContent()->willReturn('{"foo":"bar"}');
+
+        $this->post('http://sbin.dk', ['foo' => 'bar'])->shouldBe('{"foo":"bar"}');
+    }
+
+    function it_throws_an_http_exception_if_cannot_post($browser, Response $response)
+    {
+        $browser->post('http://sbin.dk', ['Content-Type: application/json'], '{"foo":"bar"}')->willReturn($response);
+
+        $response->isSuccessful()->willReturn(false);
+        $response->getStatusCode()->willReturn(500);
+        $response->getContent()->willReturn('{"id":"error_id", "message":"Error message."}');
+
+        $this->shouldThrow(new HttpException('Error message.', 500))->duringPost('http://sbin.dk', ['foo' => 'bar']);
     }
 
     function it_returns_last_response_header($browser, Response $response)

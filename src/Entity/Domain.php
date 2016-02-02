@@ -13,8 +13,9 @@ namespace DigitalOceanV2\Entity;
 
 /**
  * @author Yassir Hannoun <yassir.hannoun@gmail.com>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class Domain extends AbstractEntity
+final class Domain extends AbstractEntity
 {
     /**
      * @var string

@@ -13,8 +13,9 @@ namespace DigitalOceanV2\Entity;
 
 /**
  * @author Yassir Hannoun <yassir.hannoun@gmail.com>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class Droplet extends AbstractEntity
+final class Droplet extends AbstractEntity
 {
     /**
      * @var int
@@ -62,7 +63,7 @@ class Droplet extends AbstractEntity
     public $size;
 
     /**
-     * @var String
+     * @var string
      */
     public $sizeSlug;
 
@@ -84,22 +85,22 @@ class Droplet extends AbstractEntity
     /**
      * @var Network[]
      */
-    public $networks;
+    public $networks = [];
 
     /**
      * @var int[]
      */
-    public $backupIds;
+    public $backupIds = [];
 
     /**
      * @var int[]
      */
-    public $snapshotIds;
+    public $snapshotIds = [];
 
     /**
      * @var string[]
      */
-    public $features;
+    public $features = [];
 
     /**
      * @var bool
@@ -127,9 +128,9 @@ class Droplet extends AbstractEntity
     public $nextBackupWindow;
 
     /**
-     * @param \stdClass|array $parameters
+     * @param array $parameters
      */
-    public function build($parameters)
+    public function build(array $parameters)
     {
         foreach ($parameters as $property => $value) {
             switch ($property) {
@@ -137,50 +138,65 @@ class Droplet extends AbstractEntity
                     if (is_object($value)) {
                         if (property_exists($value, 'v4')) {
                             foreach ($value->v4 as $subProperty => $subValue) {
+                                $subValue->version = 4;
                                 $this->networks[] = new Network($subValue);
                             }
                         }
 
                         if (property_exists($value, 'v6')) {
                             foreach ($value->v6 as $subProperty => $subValue) {
+                                $subValue->version = 6;
+                                $subValue->cidr = $subValue->netmask;
+                                $subValue->netmask = null;
                                 $this->networks[] = new Network($subValue);
                             }
                         }
                     }
+                    unset($parameters[$property]);
                     break;
 
                 case 'kernel':
-                    $this->kernel = new Kernel($value);
+                    if (is_object($value)) {
+                        $this->kernel = new Kernel($value);
+                    }
+                    unset($parameters[$property]);
                     break;
 
                 case 'size':
-                    $this->size = new Size($value);
+                    if (is_object($value)) {
+                        $this->size = new Size($value);
+                    }
+                    unset($parameters[$property]);
                     break;
 
                 case 'region':
                     if (is_object($value)) {
                         $this->region = new Region($value);
                     }
+                    unset($parameters[$property]);
                     break;
 
                 case 'image':
-                    $this->image = new Image($value);
+                    if (is_object($value)) {
+                        $this->image = new Image($value);
+                    }
+                    unset($parameters[$property]);
                     break;
 
                 case 'next_backup_window':
                     $this->nextBackupWindow = new NextBackupWindow($value);
+                    unset($parameters[$property]);
                     break;
-
-                default:
-                    $this->{\DigitalOceanV2\convert_to_camel_case($property)} = $value;
             }
         }
 
+        parent::build($parameters);
+
         if (is_array($this->features) && count($this->features)) {
-            $this->backupsEnabled = in_array("backups", $this->features);
-            $this->virtIOEnabled = in_array("virtio", $this->features);
-            $this->privateNetworkingEnabled = in_array("private_networking", $this->features);
-            $this->ipv6Enabled = in_array("ipv6", $this->features);
+            $this->backupsEnabled = in_array('backups', $this->features);
+            $this->virtIOEnabled = in_array('virtio', $this->features);
+            $this->privateNetworkingEnabled = in_array('private_networking', $this->features);
+            $this->ipv6Enabled = in_array('ipv6', $this->features);
         }
     }
 
@@ -189,6 +205,6 @@ class Droplet extends AbstractEntity
      */
     public function setCreatedAt($createdAt)
     {
-        $this->createdAt = $this->convertDateTime($createdAt);
+        $this->createdAt = static::convertDateTime($createdAt);
     }
 }

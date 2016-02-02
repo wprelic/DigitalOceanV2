@@ -1,6 +1,38 @@
 CHANGELOG
 =========
 
+2.1.0 (2015-12-22)
+------------------
+
+- Unified exception handling in adapters
+- Support using buzz without curl
+- Added missing floatingIp method
+
+2.0.0 (2015-12-21)
+------------------
+
+- Added guzzle 6 support (watch out for the adapter rename)
+- Major cleanup of adapters
+- Fixed content type handling
+- Support updaing fields on domain records
+- Fixed droplet entity networking issues
+- Allow using custom endpoints
+- Made the entity classes final
+- Removed dynamic entity properties
+- Updated the account entity with the latest properties
+- Support creating multiple droplets at once
+- Support converting images to snapshots
+- Support the ability to enable droplet backups
+- Added full floating ip support
+- Improved exceptions
+- Minor code cleanup
+
+1.0.1 (2015-06-25)
+------------------
+
+- Fixed issues with null values
+- Minor code cleanup
+
 1.0.0 (2015-04-16)
 ------------------
 
@@ -21,7 +53,6 @@ CHANGELOG
 
 - Added images filtering and its specs
 - Added user image filtering and its specs
-- Tests against PHP 7
 - Updated specs and doc
 
 0.5.1 (2015-02-23)

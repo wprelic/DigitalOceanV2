@@ -11,24 +11,6 @@ Let's consume the [DigitalOcean API V2](https://developers.digitalocean.com/v2/)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/toin0u/DigitalOceanV2/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/toin0u/DigitalOceanV2/?branch=master)
 [![License](https://poser.pugx.org/toin0u/digitalocean-v2/license.svg)](https://packagist.org/packages/toin0u/digitalocean-v2)
 
-Status
-------
-
-API | Documentation | Specification tests
---- | ------------- | -------------------
-[Account](https://developers.digitalocean.com/v2/#account) | [√](https://github.com/toin0u/DigitalOceanV2#account) | √
-[Actions](https://developers.digitalocean.com/v2/#actions) | [√](https://github.com/toin0u/DigitalOceanV2#action) | √
-[Domain records](https://developers.digitalocean.com/v2/#domain-records) | [√](https://github.com/toin0u/DigitalOceanV2#domain-record) | √
-[Domains](https://developers.digitalocean.com/v2/#domains) | [√](https://github.com/toin0u/DigitalOceanV2#domain) | √
-[Droplet actions](https://developers.digitalocean.com/v2/#droplet-actions) | [√](https://github.com/toin0u/DigitalOceanV2#droplet) | √
-[Droplets](https://developers.digitalocean.com/v2/#droplets) | [√](https://github.com/toin0u/DigitalOceanV2#droplet) | √
-[Image actions](https://developers.digitalocean.com/v2/#image-actions) | [√](https://github.com/toin0u/DigitalOceanV2#image) | √
-[Images](https://developers.digitalocean.com/v2/#images) | [√](https://github.com/toin0u/DigitalOceanV2#image) | √
-[Keys](https://developers.digitalocean.com/v2/#keys) | [√](https://github.com/toin0u/DigitalOceanV2#key) | √
-[Regions](https://developers.digitalocean.com/v2/#regions) | [√](https://github.com/toin0u/DigitalOceanV2#region) | √
-[Rate Limit](https://developers.digitalocean.com/#rate-limit) | [√](https://github.com/toin0u/DigitalOceanV2#rate-limit) | √
-[Sizes](https://developers.digitalocean.com/v2/#sizes) | [√](https://github.com/toin0u/DigitalOceanV2#size) | √
-
 Installation
 ------------
 
@@ -39,9 +21,14 @@ Run these commands to install composer, the library and its dependencies:
 
 ```bash
 $ curl -sS https://getcomposer.org/installer | php
-$ php composer.phar require toin0u/digitalocean-v2:0.3.*@dev
+$ php composer.phar require toin0u/digitalocean-v2:~2.0
+```
+
+You then need to install **one** of the following:
+```bash
 $ php composer.phar require kriswallsmith/buzz:~0.10
 $ php composer.phar require guzzle/guzzle:~3.7
+$ php composer.phar require guzzlehttp/guzzle:~5.0|~6.0
 ```
 
 Or edit `composer.json` and add:
@@ -49,20 +36,33 @@ Or edit `composer.json` and add:
 ```json
 {
     "require": {
-        "toin0u/digitalocean-v2": "0.3.*@dev",
-        "kriswallsmith/buzz": "~0.10",
-        "guzzle/guzzle": "~3.7",
-        "guzzlehttp/guzzle" : "~5.0"
+        "toin0u/digitalocean-v2": "~2.0"
     }
 }
 ```
 
-Please note that installing both guzzle and buzz is not required, but you must choose at least one.
+And then add **one** of the following:
 
-Finally run:
+```json
+{
+    "require": {
+        "kriswallsmith/buzz": "~0.10",
+        "guzzle/guzzle": "~3.7",
+        "guzzlehttp/guzzle": "~5.0|~6.0"
+    }
+}
+```
 
-```bash
-$ php composer.phar require toin0u/digitalocean-v2
+### Using Laravel? ###
+
+[Laravel DigitalOcean](https://github.com/GrahamCampbell/Laravel-DigitalOcean) by [Graham Campbell](https://github.com/GrahamCampbell) might interest you.
+
+```json
+{
+    "require": {
+        "graham-campbell/digitalocean": "~3.0"
+    }
+}
 ```
 
 ### Using Symfony2? ###
@@ -129,18 +129,6 @@ $droplets = $this->container->get('do.droplet')->getAll();
 
 > This is helpful for a child of `Symfony\Bundle\FrameworkBundle\Controller\Controller` user to use by `$this->get('do.droplet')->getAll()`
 
-### Using Laravel? ###
-
-[Laravel DigitalOcean](https://github.com/GrahamCampbell/Laravel-DigitalOcean) by [Graham Campbell](https://github.com/GrahamCampbell) might interest you.
-
-```json
-{
-    "require": {
-        "graham-campbell/digitalocean": "0.1.*"
-    }
-}
-```
-
 Adapter
 -------
 
@@ -174,14 +162,6 @@ $digitalocean = new DigitalOceanV2($adapter);
 
 // ...
 ```
-
-Entities
---------
-
-Every entity has the `getUnknownProperties` method which will return an `array` of properties set with unknown
-properties by the entity. This will prevent the library to
-[fail](https://github.com/toin0u/DigitalOceanV2/pull/79#issuecomment-74075046). This should be removed when the API
-will be released as stable.
 
 Account
 -------
@@ -303,7 +283,7 @@ $actions = $droplet->getActions(123);
 // return the Action entity 456 of the droplet 123
 $action123 = $droplet->getActionById(123, 456);
 
-// delete droplet 123 and return the Action entity
+// reboot droplet 123 and return the Action entity
 $rebooted = $droplet->reboot(123);
 
 // power cycle droplet 123 and return the Action entity
@@ -479,8 +459,11 @@ Credits
 -------
 
 * [Antoine Corcy](https://twitter.com/toin0u)
+* [Graham Campbell](https://twitter.com/GrahamCampbell)
 * [Yassir Hannoun](https://twitter.com/yassirh)
 * [Liverbool](https://github.com/liverbool)
+* [Marcos Sigueros](https://github.com/alrik11es)
+* [Chris Fidao](https://github.com/fideloper)
 * [All contributors](https://github.com/toin0u/DigitalOceanV2/contributors)
 
 Support
@@ -515,7 +498,7 @@ maintainers.
 
 This Code of Conduct is adapted from the [Contributor
 Covenant](http:contributor-covenant.org), version 1.0.0, available at
-[http://contributor-covenant.org/version/1/0/0/](http://contributor-covenant.org/version/1/0/0/)
+[http://contributor-covenant.org/version/1/0/0/](http://contributor-covenant.org/version/1/0/0/).
 
 License
 -------

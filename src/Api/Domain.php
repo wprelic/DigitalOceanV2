@@ -12,9 +12,11 @@
 namespace DigitalOceanV2\Api;
 
 use DigitalOceanV2\Entity\Domain as DomainEntity;
+use DigitalOceanV2\Exception\HttpException;
 
 /**
  * @author Yassir Hannoun <yassir.hannoun@gmail.com>
+ * @author Graham Campbell <graham@alt-three.com>
  */
 class Domain extends AbstractApi
 {
@@ -23,7 +25,8 @@ class Domain extends AbstractApi
      */
     public function getAll()
     {
-        $domains = $this->adapter->get(sprintf('%s/domains?per_page=%d', self::ENDPOINT, PHP_INT_MAX));
+        $domains = $this->adapter->get(sprintf('%s/domains?per_page=%d', $this->endpoint, 200));
+
         $domains = json_decode($domains);
 
         $this->extractMeta($domains);
@@ -36,13 +39,14 @@ class Domain extends AbstractApi
     /**
      * @param string $domainName
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return DomainEntity
      */
     public function getByName($domainName)
     {
-        $domain = $this->adapter->get(sprintf('%s/domains/%s', self::ENDPOINT, $domainName));
+        $domain = $this->adapter->get(sprintf('%s/domains/%s', $this->endpoint, $domainName));
+
         $domain = json_decode($domain);
 
         return new DomainEntity($domain->domain);
@@ -52,16 +56,16 @@ class Domain extends AbstractApi
      * @param string $name
      * @param string $ipAddress
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      *
      * @return DomainEntity
      */
     public function create($name, $ipAddress)
     {
-        $headers = array('Content-Type: application/json');
-        $content = json_encode(array('name' => $name, 'ip_address' => $ipAddress));
+        $content = ['name' => $name, 'ip_address' => $ipAddress];
 
-        $domain = $this->adapter->post(sprintf('%s/domains', self::ENDPOINT), $headers, $content);
+        $domain = $this->adapter->post(sprintf('%s/domains', $this->endpoint), $content);
+
         $domain = json_decode($domain);
 
         return new DomainEntity($domain->domain);
@@ -70,11 +74,10 @@ class Domain extends AbstractApi
     /**
      * @param string $domain
      *
-     * @throws \RuntimeException
+     * @throws HttpException
      */
     public function delete($domain)
     {
-        $headers = array('Content-Type: application/x-www-form-urlencoded');
-        $this->adapter->delete(sprintf('%s/domains/%s', self::ENDPOINT, $domain), $headers);
+        $this->adapter->delete(sprintf('%s/domains/%s', $this->endpoint, $domain));
     }
 }

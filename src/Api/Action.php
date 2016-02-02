@@ -15,6 +15,7 @@ use DigitalOceanV2\Entity\Action as ActionEntity;
 
 /**
  * @author Antoine Corcy <contact@sbin.dk>
+ * @author Graham Campbell <graham@alt-three.com>
  */
 class Action extends AbstractApi
 {
@@ -23,7 +24,8 @@ class Action extends AbstractApi
      */
     public function getAll()
     {
-        $actions = $this->adapter->get(sprintf('%s/actions?per_page=%d', self::ENDPOINT, PHP_INT_MAX));
+        $actions = $this->adapter->get(sprintf('%s/actions?per_page=%d', $this->endpoint, 200));
+
         $actions = json_decode($actions);
 
         $this->extractMeta($actions);
@@ -40,7 +42,8 @@ class Action extends AbstractApi
      */
     public function getById($id)
     {
-        $action = $this->adapter->get(sprintf('%s/actions/%d', self::ENDPOINT, $id));
+        $action = $this->adapter->get(sprintf('%s/actions/%d', $this->endpoint, $id));
+
         $action = json_decode($action);
 
         $this->meta = null;

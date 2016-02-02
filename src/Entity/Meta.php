@@ -13,8 +13,9 @@ namespace DigitalOceanV2\Entity;
 
 /**
  * @author Antoine Corcy <contact@sbin.dk>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class Meta extends AbstractEntity
+final class Meta extends AbstractEntity
 {
     /**
      * @var int

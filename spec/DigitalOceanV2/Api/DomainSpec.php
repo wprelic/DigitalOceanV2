@@ -3,6 +3,7 @@
 namespace spec\DigitalOceanV2\Api;
 
 use DigitalOceanV2\Adapter\AdapterInterface;
+use DigitalOceanV2\Exception\HttpException;
 
 class DomainSpec extends \PhpSpec\ObjectBehavior
 {
@@ -18,7 +19,7 @@ class DomainSpec extends \PhpSpec\ObjectBehavior
 
     function it_returns_an_empty_array($adapter)
     {
-        $adapter->get('https://api.digitalocean.com/v2/domains?per_page='.PHP_INT_MAX)->willReturn('{"domains": []}');
+        $adapter->get('https://api.digitalocean.com/v2/domains?per_page=200')->willReturn('{"domains": []}');
 
         $domains = $this->getAll();
         $domains->shouldBeArray();
@@ -29,7 +30,7 @@ class DomainSpec extends \PhpSpec\ObjectBehavior
     {
         $total = 3;
         $adapter
-            ->get('https://api.digitalocean.com/v2/domains?per_page='.PHP_INT_MAX)
+            ->get('https://api.digitalocean.com/v2/domains?per_page=200')
             ->willReturn(sprintf('{"domains": [{},{},{}], "meta": {"total": %d}}', $total));
 
         $domains = $this->getAll();
@@ -43,7 +44,7 @@ class DomainSpec extends \PhpSpec\ObjectBehavior
         $meta->total->shouldBe(3);
     }
 
-    function it_returns_an_domain_entity_get_by_its_name($adapter)
+    function it_returns_a_domain_entity_get_by_its_name($adapter)
     {
         $adapter
             ->get('https://api.digitalocean.com/v2/domains/foo.com')
@@ -60,23 +61,19 @@ class DomainSpec extends \PhpSpec\ObjectBehavior
         $this->getByName('foo.com')->shouldReturnAnInstanceOf('DigitalOceanV2\Entity\Domain');
     }
 
-    function it_throws_an_runtime_exception_if_requested_domain_does_not_exist($adapter)
+    function it_throws_an_http_exception_if_requested_domain_does_not_exist($adapter)
     {
         $adapter
             ->get('https://api.digitalocean.com/v2/domains/foo.bar')
-            ->willThrow(new \RuntimeException('Request not processed.'));
+            ->willThrow(new HttpException('Request not processed.'));
 
-        $this->shouldThrow(new \RuntimeException('Request not processed.'))->duringGetByName('foo.bar');
+        $this->shouldThrow(new HttpException('Request not processed.'))->duringGetByName('foo.bar');
     }
 
     function it_returns_the_created_domain_entity($adapter)
     {
         $adapter
-            ->post(
-                'https://api.digitalocean.com/v2/domains',
-                array('Content-Type: application/json'),
-                '{"name":"bar.dk","ip_address":"127.0.0.1"}'
-            )
+            ->post('https://api.digitalocean.com/v2/domains', ['name' => 'bar.dk', 'ip_address' => '127.0.0.1'])
             ->willReturn('
                 {
                     "domain": {
@@ -90,40 +87,30 @@ class DomainSpec extends \PhpSpec\ObjectBehavior
         $this->create('bar.dk', '127.0.0.1')->shouldReturnAnInstanceOf('DigitalOceanV2\Entity\Domain');
     }
 
-    function it_throws_a_runtime_exception_if_ip_address_is_invalid($adapter)
+    function it_throws_an_http_exception_if_ip_address_is_invalid($adapter)
     {
         $adapter
-            ->post(
-                'https://api.digitalocean.com/v2/domains',
-                array('Content-Type: application/json'),
-                '{"name":"boo.dk","ip_address":"123456"}'
-            )
-            ->willThrow(new \RuntimeException('Request not processed.'));
+            ->post('https://api.digitalocean.com/v2/domains', ['name' => 'boo.dk', 'ip_address' => '123456'])
+            ->willThrow(new HttpException('Request not processed.'));
 
-        $this->shouldThrow(new \RuntimeException('Request not processed.'))->duringCreate('boo.dk', "123456");
+        $this->shouldThrow(new HttpException('Request not processed.'))->duringCreate('boo.dk', '123456');
     }
 
     function it_deletes_the_domain_and_returns_nothing($adapter)
     {
         $adapter
-            ->delete(
-                'https://api.digitalocean.com/v2/domains/qmx.fr',
-                array('Content-Type: application/x-www-form-urlencoded')
-            )
+            ->delete('https://api.digitalocean.com/v2/domains/qmx.fr')
             ->shouldBeCalled();
 
         $this->delete('qmx.fr');
     }
 
-    function it_throws_a_runtime_exception_when_trying_to_delete_an_inexisting_domain($adapter)
+    function it_throws_an_http_exception_when_trying_to_delete_an_inexisting_domain($adapter)
     {
         $adapter
-            ->delete(
-                'https://api.digitalocean.com/v2/domains/qmx.bar',
-                array('Content-Type: application/x-www-form-urlencoded')
-            )
-            ->willThrow(new \RuntimeException('Request not processed.'));
+            ->delete('https://api.digitalocean.com/v2/domains/qmx.bar')
+            ->willThrow(new HttpException('Request not processed.'));
 
-        $this->shouldThrow(new \RuntimeException('Request not processed.'))->duringDelete('qmx.bar');
+        $this->shouldThrow(new HttpException('Request not processed.'))->duringDelete('qmx.bar');
     }
 }

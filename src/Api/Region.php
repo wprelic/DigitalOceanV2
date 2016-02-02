@@ -15,6 +15,7 @@ use DigitalOceanV2\Entity\Region as RegionEntity;
 
 /**
  * @author Yassir Hannoun <yassir.hannoun@gmail.com>
+ * @author Graham Campbell <graham@alt-three.com>
  */
 class Region extends AbstractApi
 {
@@ -23,7 +24,8 @@ class Region extends AbstractApi
      */
     public function getAll()
     {
-        $regions = $this->adapter->get(sprintf('%s/regions?per_page=%d', self::ENDPOINT, PHP_INT_MAX));
+        $regions = $this->adapter->get(sprintf('%s/regions?per_page=%d', $this->endpoint, 200));
+
         $regions = json_decode($regions);
 
         $this->extractMeta($regions);

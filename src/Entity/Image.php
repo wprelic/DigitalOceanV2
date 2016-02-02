@@ -13,8 +13,9 @@ namespace DigitalOceanV2\Entity;
 
 /**
  * @author Yassir Hannoun <yassir.hannoun@gmail.com>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class Image extends AbstractEntity
+final class Image extends AbstractEntity
 {
     /**
      * @var int
@@ -59,13 +60,13 @@ class Image extends AbstractEntity
     /**
      * @var string[]
      */
-    public $regions;
+    public $regions = [];
 
     /**
      * @param string $createdAt
      */
     public function setCreatedAt($createdAt)
     {
-        $this->createdAt = $this->convertDateTime($createdAt);
+        $this->createdAt = static::convertDateTime($createdAt);
     }
 }

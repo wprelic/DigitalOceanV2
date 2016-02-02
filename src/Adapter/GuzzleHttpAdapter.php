@@ -1,27 +1,20 @@
 <?php
 
-/*
- * This file is part of the DigitalOceanV2 library.
- *
- * (c) Antoine Corcy <contact@sbin.dk>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace DigitalOceanV2\Adapter;
 
 use DigitalOceanV2\Exception\HttpException;
-use Guzzle\Http\Client;
-use Guzzle\Http\ClientInterface;
-use Guzzle\Http\Exception\RequestException;
-use Guzzle\Http\Message\Response;
+use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Message\ResponseInterface;
+use GuzzleHttp\Psr7\Response;
 
 /**
- * @author Liverbool <nukboon@gmail.com>
+ * @author Marcos Sigueros <alrik11es@gmail.com>
+ * @author Chris Fidao <fideloper@gmail.com>
  * @author Graham Campbell <graham@alt-three.com>
  */
-class GuzzleAdapter implements AdapterInterface
+class GuzzleHttpAdapter implements AdapterInterface
 {
     /**
      * @var ClientInterface
@@ -29,7 +22,7 @@ class GuzzleAdapter implements AdapterInterface
     protected $client;
 
     /**
-     * @var Response
+     * @var Response|ResponseInterface
      */
     protected $response;
 
@@ -39,9 +32,13 @@ class GuzzleAdapter implements AdapterInterface
      */
     public function __construct($token, ClientInterface $client = null)
     {
-        $this->client = $client ?: new Client();
+        if (version_compare(ClientInterface::VERSION, '6') === 1) {
+            $this->client = $client ?: new Client(['headers' => ['Authorization' => sprintf('Bearer %s', $token)]]);
+        } else {
+            $this->client = $client ?: new Client();
 
-        $this->client->setDefaultOption('headers/Authorization', sprintf('Bearer %s', $token));
+            $this->client->setDefaultOption('headers/Authorization', sprintf('Bearer %s', $token));
+        }
     }
 
     /**
@@ -50,13 +47,13 @@ class GuzzleAdapter implements AdapterInterface
     public function get($url)
     {
         try {
-            $this->response = $this->client->get($url)->send();
+            $this->response = $this->client->get($url);
         } catch (RequestException $e) {
             $this->response = $e->getResponse();
             $this->handleError();
         }
 
-        return $this->response->getBody(true);
+        return $this->response->getBody();
     }
 
     /**
@@ -65,13 +62,13 @@ class GuzzleAdapter implements AdapterInterface
     public function delete($url)
     {
         try {
-            $this->response = $this->client->delete($url)->send();
+            $this->response = $this->client->delete($url);
         } catch (RequestException $e) {
             $this->response = $e->getResponse();
             $this->handleError();
         }
 
-        return $this->response->getBody(true);
+        return $this->response->getBody();
     }
 
     /**
@@ -79,22 +76,18 @@ class GuzzleAdapter implements AdapterInterface
      */
     public function put($url, $content = '')
     {
-        $request = $this->client->put($url);
+        $options = [];
 
-        if (is_array($content)) {
-            $request->setBody(json_encode($content), 'application/json');
-        } else {
-            $request->setBody($content);
-        }
+        $options[is_array($content) ? 'json' : 'body'] = $content;
 
         try {
-            $this->response = $request->send();
+            $this->response = $this->client->put($url, $options);
         } catch (RequestException $e) {
             $this->response = $e->getResponse();
             $this->handleError();
         }
 
-        return $this->response->getBody(true);
+        return $this->response->getBody();
     }
 
     /**
@@ -102,22 +95,18 @@ class GuzzleAdapter implements AdapterInterface
      */
     public function post($url, $content = '')
     {
-        $request = $this->client->post($url);
+        $options = [];
 
-        if (is_array($content)) {
-            $request->setBody(json_encode($content), 'application/json');
-        } else {
-            $request->setBody($content);
-        }
+        $options[is_array($content) ? 'json' : 'body'] = $content;
 
         try {
-            $this->response = $request->send();
+            $this->response = $this->client->post($url, $options);
         } catch (RequestException $e) {
             $this->response = $e->getResponse();
             $this->handleError();
         }
 
-        return $this->response->getBody(true);
+        return $this->response->getBody();
     }
 
     /**
@@ -141,7 +130,7 @@ class GuzzleAdapter implements AdapterInterface
      */
     protected function handleError()
     {
-        $body = (string) $this->response->getBody(true);
+        $body = (string) $this->response->getBody();
         $code = (int) $this->response->getStatusCode();
 
         $content = json_decode($body);

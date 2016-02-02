@@ -13,8 +13,9 @@ namespace DigitalOceanV2\Entity;
 
 /**
  * @author Yassir Hannoun <yassir.hannoun@gmail.com>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class Network extends AbstractEntity
+final class Network extends AbstractEntity
 {
     /**
      * @var string
@@ -32,16 +33,23 @@ class Network extends AbstractEntity
     public $type;
 
     /**
+     * IPv4 or IPv6.
+     *
+     * @var int
+     */
+    public $version;
+
+    /**
      * IPv6 specific.
      *
-     * @var string
+     * @var string|null
      */
     public $cidr;
 
     /**
      * IPv4 specific.
      *
-     * @var string
+     * @var string|null
      */
     public $netmask;
 }

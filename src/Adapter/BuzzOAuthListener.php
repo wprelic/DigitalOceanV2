@@ -11,25 +11,27 @@
 
 namespace DigitalOceanV2\Adapter;
 
+use Buzz\Listener\ListenerInterface;
 use Buzz\Message\MessageInterface;
 use Buzz\Message\RequestInterface;
 
 /**
  * @author Antoine Corcy <contact@sbin.dk>
+ * @author Graham Campbell <graham@alt-three.com>
  */
-class BuzzOAuthListener implements \Buzz\Listener\ListenerInterface
+class BuzzOAuthListener implements ListenerInterface
 {
     /**
      * @var string
      */
-    protected $accessToken;
+    protected $token;
 
     /**
-     * @param string $accessToken
+     * @param string $token
      */
-    public function __construct($accessToken)
+    public function __construct($token)
     {
-        $this->accessToken = $accessToken;
+        $this->token = $token;
     }
 
     /**
@@ -37,7 +39,7 @@ class BuzzOAuthListener implements \Buzz\Listener\ListenerInterface
      */
     public function preSend(RequestInterface $request)
     {
-        $request->addHeader(sprintf('Authorization: Bearer %s', $this->accessToken));
+        $request->addHeader(sprintf('Authorization: Bearer %s', $this->token));
     }
 
     /**
@@ -45,5 +47,6 @@ class BuzzOAuthListener implements \Buzz\Listener\ListenerInterface
      */
     public function postSend(RequestInterface $request, MessageInterface $response)
     {
+        //
     }
 }

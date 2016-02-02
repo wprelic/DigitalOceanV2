@@ -15,6 +15,7 @@ use DigitalOceanV2\Entity\Account as AccountEntity;
 
 /**
  * @author Antoine Corcy <contact@sbin.dk>
+ * @author Graham Campbell <graham@alt-three.com>
  */
 class Account extends AbstractApi
 {
@@ -23,7 +24,8 @@ class Account extends AbstractApi
      */
     public function getUserInformation()
     {
-        $account = $this->adapter->get(sprintf('%s/account', self::ENDPOINT));
+        $account = $this->adapter->get(sprintf('%s/account', $this->endpoint));
+
         $account = json_decode($account);
 
         return new AccountEntity($account->account);
